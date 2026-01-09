@@ -1,5 +1,5 @@
 # Muxie
-
+[[Website]](https://muxie.xyz)
 
 
 https://github.com/user-attachments/assets/83fc644d-7797-4439-9c06-d0f019d1115a
@@ -11,6 +11,8 @@ Hey there! Welcome to Muxie, your new best friend for managing tmux sessions wit
 ## What's Muxie all about?
 
 Muxie is a terminal user interface (TUI) that allows you to select and start predefined tmux sessions. You can configure your sessions in a `config.yml` file, and Muxie will present them in a list for you to choose from. Select a session, hit enter, and Muxie will take care of the rest.
+
+
 
 ## Installation
 
