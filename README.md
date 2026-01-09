@@ -1,6 +1,6 @@
 # Muxie
 
-![Muxie video](muxie_vid.mp4)
+<video src="muxie_vid.mp4" controls width="600"></video>
 
 Hey there! Welcome to Muxie, your new best friend for managing tmux sessions with ease. Gone are the days of manually setting up your development environment every single time. With Muxie, you can define your sessions, windows, and panes in a simple YAML file and get everything up and running in a flash.
 
