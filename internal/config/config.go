@@ -23,14 +23,16 @@ type Session struct {
 
 // Window represents a window within a session, containing multiple panes split in a layout.
 type Window struct {
-	Name   string `yaml:"name"`
-	Panes  []Pane `yaml:"panes"`
-	Layout string `yaml:"layout"`
+	Name      string `yaml:"name"`
+	Directory string `yaml:"directory"`
+	Panes     []Pane `yaml:"panes"`
+	Layout    string `yaml:"layout"`
 }
 
 // Pane defines a single pane within a window, with its associated command.
 type Pane struct {
-	Command string `yaml:"command"`
+	Command   string `yaml:"command"`
+	Directory string `yaml:"directory"`
 }
 
 // createExampleConfigFile creates an example configuration file if one does not already exist.
