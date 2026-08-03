@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -88,6 +89,17 @@ func KillSession(name string) error {
 	return nil
 }
 
+// KillWindow kills the tmux window with the given session name and window index.
+// Returns an error if the command fails.
+func KillWindow(sessionName string, index int) error {
+	cmd := exec.Command("tmux", "kill-window", "-t", fmt.Sprintf("%s:%d", sessionName, index))
+	if err := cmd.Run(); err != nil {
+		log.Println("Error killing session:", err)
+		return err
+	}
+	return nil
+}
+
 // GetActiveSession returns the name of the currently active tmux session.
 // Returns an empty string if there is no active session.
 func GetActiveSession() (string, error) {
@@ -131,13 +143,32 @@ func SplitWindow(sessionName, windowName, layout string) error {
 	return cmd.Run()
 }
 
+// GetPaneBaseIndex returns the value of the global tmux variable 'pane-base-index'
+func GetPaneBaseIndex() (int, error) {
+	cmd := exec.Command("tmux", "show", "-g", "pane-base-index")
+	result, err := cmd.Output()
+	if err != nil {
+		return -1, fmt.Errorf("Failed to run 'tmux show -g pane-base-index': %s", err)
+	}
+
+	result_string := strings.TrimSpace(string(result))
+	result_trimmed := strings.TrimPrefix(result_string, "pane-base-index ")
+
+	i, err := strconv.Atoi(result_trimmed)
+	if err != nil {
+		return -1, fmt.Errorf("Failed to convert pane-base-index to integer %s", err)
+	}
+
+	return i, nil
+}
+
 // SendKeys sends a command to a specific tmux pane.
 // sessionName: the name of the tmux session.
 // windowName: the name of the window.
 // paneIndex: the index of the pane (0-based).
 // keys: the command or keys to send.
 func SendKeys(sessionName, windowName string, paneIndex int, keys string) error {
-	target := fmt.Sprintf("%s:%s.%d", sessionName, windowName, paneIndex+1)
+	target := fmt.Sprintf("%s:%s.%d", sessionName, windowName, paneIndex)
 	cmd := exec.Command("tmux", "send-keys", "-t", target)
 	if keys != "" {
 		cmd.Args = append(cmd.Args, keys, "C-m")
