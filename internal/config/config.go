@@ -55,6 +55,7 @@ func createExampleConfigFile(configDir string) error {
         panes:
           - command: "nvim"
           - command: "git status"
+            directory: "~/projects/another-project"
       - name: "Server"
         panes:
           - command: "npm run dev"

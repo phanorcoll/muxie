@@ -116,20 +116,23 @@ func GetActiveSession() (string, error) {
 	return activeSession, nil
 }
 
+// newWindowArgs builds the argument list for a tmux new-window command.
+func newWindowArgs(sessionName, windowName, directory string) []string {
+	return []string{"new-window", "-t", sessionName, "-n", windowName, "-c", directory}
+}
+
 // NewWindow creates a new tmux window in the specified session and directory.
 // sessionName: the name of the tmux session.
 // windowName: the name for the new window.
 // directory: the working directory for the new window.
 func NewWindow(sessionName, windowName, directory string) error {
-	cmd := exec.Command("tmux", "new-window", "-t", sessionName, "-n", windowName, "-c", directory)
+	cmd := exec.Command("tmux", newWindowArgs(sessionName, windowName, directory)...)
 	return cmd.Run()
 }
 
-// SplitWindow splits the current tmux window in the specified session.
-// sessionName: the name of the tmux session.
-// windowName: the name of the window to split.
-// layout: the layout type ("horizontal" or "vertical").
-func SplitWindow(sessionName, windowName, layout string) error {
+// splitWindowArgs builds the argument list for a tmux split-window command.
+// directory may be empty; when non-empty, -c directory is included.
+func splitWindowArgs(sessionName, windowName, layout, directory string) []string {
 	var layoutFlag string
 	switch layout {
 	case "horizontal":
@@ -139,7 +142,20 @@ func SplitWindow(sessionName, windowName, layout string) error {
 	default:
 		layoutFlag = "-h" // Default to horizontal split
 	}
-	cmd := exec.Command("tmux", "split-window", "-t", fmt.Sprintf("%s:%s", sessionName, windowName), fmt.Sprintf("%s", layoutFlag))
+	args := []string{"split-window", "-t", fmt.Sprintf("%s:%s", sessionName, windowName), layoutFlag}
+	if directory != "" {
+		args = append(args, "-c", directory)
+	}
+	return args
+}
+
+// SplitWindow splits the current tmux window in the specified session.
+// sessionName: the name of the tmux session.
+// windowName: the name of the window to split.
+// layout: the layout type ("horizontal" or "vertical").
+// directory: optional working directory for the new pane (passed as -c).
+func SplitWindow(sessionName, windowName, layout, directory string) error {
+	cmd := exec.Command("tmux", splitWindowArgs(sessionName, windowName, layout, directory)...)
 	return cmd.Run()
 }
 

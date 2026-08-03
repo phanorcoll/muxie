@@ -60,6 +60,7 @@ sessions:
         panes:
           - command: "nvim"
           - command: "git status"
+            directory: "~/projects/another-project"
       - name: "Server"
         panes:
           - command: "npm run dev"
@@ -71,7 +72,17 @@ sessions:
           - command: "vim"
 ```
 
-In this example, we have two sessions defined: "My Awesome Project" and "Another Project". Each session has a name, a directory where it should be started, and a list of windows. Each window has a name, a layout, and a list of panes. Each pane has a command that will be executed when it's created.
+In this example, we have two sessions defined: "My Awesome Project" and "Another Project". Each session has a `name`, a `directory` where it should be started, and a list of `windows`. Each window has a `name`, a `layout`, and a list of `panes`. Each pane has a `command` that will be executed when it's created, and an optional `directory` to override the working directory for that individual pane.
+
+### Directory resolution
+
+Muxie resolves the working directory for each pane using a cascade:
+
+1. **Pane-level `directory`** — if set on a pane, it overrides everything else
+2. **Window-level `directory`** — if set on a window, it applies to all panes in that window that don't have their own directory
+3. **Session-level `directory`** — the fallback for everything
+
+This lets you, for example, keep a `git status` pane pointed at a different repo without spawning a separate window.
 
 ### Keybindings
 
