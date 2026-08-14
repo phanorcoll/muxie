@@ -50,13 +50,27 @@ func StartSession(sessionName, sessionDirectory string, windows []config.Window)
 			paneDirectory := resolvePaneDirectory(sessionDirectory, w.Directory, p.Directory)
 
 			if j > 0 {
-				if err := SplitWindow(sessionName, w.Name, w.Layout, paneDirectory); err != nil {
+				// Use the simple direction if available; raw layout strings are
+				// applied later via select-layout.
+				splitLayout := w.Layout
+				if splitLayout != "horizontal" && splitLayout != "vertical" {
+					splitLayout = "horizontal" // placeholder; real layout applied below
+				}
+				if err := SplitWindow(sessionName, w.Name, splitLayout, paneDirectory); err != nil {
 					return fmt.Errorf("failed to split window '%s' in session '%s': %w", w.Name, sessionName, err)
 				}
 			}
 
 			if err := SendKeys(sessionName, w.Name, basePaneIndex + j, fmt.Sprintf("cd %s && clear && %s", paneDirectory, p.Command)); err != nil {
 				return fmt.Errorf("failed to send keys to pane %d in window '%s' of session '%s': %w", j, w.Name, sessionName, err)
+			}
+		}
+
+		// Apply the raw layout string if present — this handles nested splits
+		// that can't be expressed with a simple -h/-v flag.
+		if w.Layout != "" && w.Layout != "horizontal" && w.Layout != "vertical" {
+			if err := SelectLayout(sessionName, w.Name, w.Layout); err != nil {
+				return fmt.Errorf("failed to apply layout to window '%s': %w", w.Name, err)
 			}
 		}
 	}

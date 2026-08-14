@@ -199,6 +199,83 @@ func SwitchSession(sessionName string) error {
 	return cmd.Run()
 }
 
+// WindowData represents information about a tmux window, including its panes.
+type WindowData struct {
+	Name   string
+	Layout string
+	Panes  []PaneData
+}
+
+// PaneData represents information about a single tmux pane.
+type PaneData struct {
+	Command   string
+	Directory string
+}
+
+// GetSessionWindows retrieves all windows and their panes for a given tmux session.
+func GetSessionWindows(sessionName string) ([]WindowData, error) {
+	cmd := exec.Command("tmux", "list-windows", "-t", sessionName,
+		"-F", "#{window_index}||#{window_name}||#{window_layout}")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("could not list windows for session '%s': %w", sessionName, err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	var windows []WindowData
+
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		parts := strings.SplitN(line, "||", 3)
+		if len(parts) < 2 {
+			continue
+		}
+		windowIndex := parts[0]
+		windowName := parts[1]
+		windowLayout := ""
+		if len(parts) > 2 {
+			windowLayout = parts[2]
+		}
+
+		// Get panes for this window
+		paneCmd := exec.Command("tmux", "list-panes", "-t",
+			fmt.Sprintf("%s:%s", sessionName, windowIndex),
+			"-F", "#{pane_current_command}||#{pane_current_path}")
+		paneOutput, paneErr := paneCmd.Output()
+		var panes []PaneData
+		if paneErr == nil {
+			paneLines := strings.Split(strings.TrimSpace(string(paneOutput)), "\n")
+			for _, pl := range paneLines {
+				if pl == "" {
+					continue
+				}
+				pp := strings.SplitN(pl, "||", 2)
+				cmd := pp[0]
+				dir := ""
+				if len(pp) > 1 {
+					dir = pp[1]
+				}
+				panes = append(panes, PaneData{Command: cmd, Directory: dir})
+			}
+		}
+
+		windows = append(windows, WindowData{Name: windowName, Layout: windowLayout, Panes: panes})
+	}
+
+	return windows, nil
+}
+
+// SelectLayout applies a layout string to a tmux window.
+// The layout string can be a raw tmux layout (as returned by #{window_layout})
+// or a preset name like even-horizontal, even-vertical, tiled, etc.
+func SelectLayout(sessionName, windowName, layout string) error {
+	cmd := exec.Command("tmux", "select-layout", "-t",
+		fmt.Sprintf("%s:%s", sessionName, windowName), layout)
+	return cmd.Run()
+}
+
 // expandHomeDir expands a leading ~ in a directory path to the user's home directory.
 // dirname: the directory path to expand.
 func expandHomeDir(dirname string) string {

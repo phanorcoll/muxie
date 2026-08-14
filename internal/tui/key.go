@@ -9,6 +9,7 @@ type keyMap struct {
 	Rename key.Binding
 	Kill   key.Binding
 	Add    key.Binding
+	Save   key.Binding
 	Escape key.Binding
 	Enter  key.Binding
 	Help   key.Binding
@@ -33,6 +34,10 @@ var defaultKeyMap = keyMap{
 	Kill: key.NewBinding(
 		key.WithKeys("d"),
 		key.WithHelp("d", "kill session"),
+	),
+	Save: key.NewBinding(
+		key.WithKeys("w"),
+		key.WithHelp("w", "save to config"),
 	),
 	Help: key.NewBinding(
 		key.WithKeys("?"),
@@ -67,7 +72,7 @@ func (k keyMap) ShortHelp() []key.Binding {
 func (k keyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Add, k.Rename},
-		{k.Kill, k.Quit},
+		{k.Save, k.Kill},
 		{k.Enter, k.Filter},
 	}
 }

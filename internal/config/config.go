@@ -73,6 +73,15 @@ func createExampleConfigFile(configDir string) error {
 	return nil
 }
 
+// configFilePath returns the path to the muxie configuration file.
+func configFilePath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("could not get user home directory: %w", err)
+	}
+	return filepath.Join(home, ".config", "muxie", "config.yml"), nil
+}
+
 // Load reads the muxie configuration file from the user's home directory and returns a Config struct.
 // If the configuration file does not exist, it returns a default Config.
 func Load() (*Config, error) {
@@ -105,4 +114,28 @@ func Load() (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+// Save writes the current Config back to the muxie configuration file.
+// Creates the config directory if it does not already exist.
+func (c *Config) Save() error {
+	configFile, err := configFilePath()
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Dir(configFile), 0755); err != nil {
+		return fmt.Errorf("could not create config directory: %w", err)
+	}
+
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return fmt.Errorf("could not marshal config: %w", err)
+	}
+
+	if err := os.WriteFile(configFile, data, 0644); err != nil {
+		return fmt.Errorf("could not write config file: %w", err)
+	}
+
+	return nil
 }

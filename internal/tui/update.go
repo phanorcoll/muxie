@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/phanorcoll/muxie/internal/config"
 	"github.com/phanorcoll/muxie/internal/tmux"
 )
 
@@ -136,6 +137,48 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.statusData.icon = "󰗨"
 				m.statusData.color = "#C53770"
 				return m, nil
+			case key.Matches(msg, m.keys.Save):
+				si := m.sessionList.SelectedItem().(session)
+				if si.isFromConfig {
+					statusCmd := m.sessionList.NewStatusMessage(errorStyle("󰗼 already in config"))
+					return m, statusCmd
+				}
+				if !si.isRunning {
+					statusCmd := m.sessionList.NewStatusMessage(errorStyle("󰗼 not running"))
+					return m, statusCmd
+				}
+				windows, err := tmux.GetSessionWindows(si.sessionName)
+				if err != nil {
+					m.logger.Printf("Error getting windows for session %s: %v", si.sessionName, err)
+					statusCmd := m.sessionList.NewStatusMessage(errorStyle("󰗼 failed to read session"))
+					return m, statusCmd
+				}
+				var cfgWindows []config.Window
+				for _, w := range windows {
+					var panes []config.Pane
+					for _, p := range w.Panes {
+						panes = append(panes, config.Pane{
+							Command:   p.Command,
+							Directory: p.Directory,
+						})
+					}
+					cfgWindows = append(cfgWindows, config.Window{
+						Name:   w.Name,
+						Layout: w.Layout,
+						Panes:  panes,
+					})
+				}
+				m.config.Sessions = append(m.config.Sessions, config.Session{
+					Name:    si.sessionName,
+					Windows: cfgWindows,
+				})
+				if err := m.config.Save(); err != nil {
+					m.logger.Printf("Error saving config: %v", err)
+					statusCmd := m.sessionList.NewStatusMessage(errorStyle("󰗼 save failed"))
+					return m, statusCmd
+				}
+				statusCmd := m.sessionList.NewStatusMessage(statusMessageStyle("󰗼 saved to config"))
+				return m, tea.Sequence(statusCmd, getSessionsCmd(m.config))
 			case key.Matches(msg, m.keys.Start):
 				si := m.sessionList.SelectedItem().(session)
 				for _, s := range m.config.Sessions {
